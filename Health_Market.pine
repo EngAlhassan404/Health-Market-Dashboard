@@ -1,0 +1,262 @@
+//@version=6
+// -----------------------------------------------------------------------------
+// © 2025 [ Eng.Alhassan Ali Mubarak Bahbah]
+//
+// Title:         Health Market v4.4
+// Author:        Eng.Alhassan Ali Mubarak Bahbah
+// License:       MIT 
+// Version:       4.4 (August 2025)
+// Description:   A comprehensive market analysis tool designed to provide traders
+//                with a multi-faceted view of market dynamics. It combines
+//                strategic levels (Previous Day High/Low), tactical momentum,
+//                price velocity, and market state analysis into a single,
+//                easy-to-read dashboard on the chart. This version (4.4)
+//                re-implements the drawing of the strategic Equilibrium line.
+//
+// Features:
+//    - Strategic Levels: Plots Previous Day High (PDH), Previous Day Low (PDL),
+//      and the Equilibrium line to define the daily operational range.
+//    - Strategic Bias: Determines the daily bias (Bullish/Bearish/Neutral)
+//      based on price interaction with the strategic levels.
+//    - Tactical Analysis: Draws dynamic lines based on the previous candle's
+//      momentum to highlight short-term bullish, bearish, or consolidation phases.
+//    - Price Velocity: Measures the current candle's range against a historical
+//      average to gauge momentum (e.g., High, Medium, Low Velocity).
+//    - Market State: Classifies the current market condition into states like
+//      Accumulation, Expansion, Reversal, or Ranging.
+//    - All-in-One Dashboard: Displays all key information in a customizable
+//      table on the chart for quick decision-making.
+//
+// Disclaimer:    This script is for educational purposes only. It is not financial
+//                advice. Trading involves risk. Use at your own discretion.
+// -----------------------------------------------------------------------------
+indicator(title="Health Market", overlay=true)
+
+// =============================================================================
+//                                 INPUTS 
+// =============================================================================
+
+// --- Strategic Levels Inputs ---
+var g_STRAT = "Strategic Levels"
+show_strategic_lines = input.bool(true, "Show PDH/PDL Lines?", group = g_STRAT, tooltip="Toggles the visibility of the Previous Day High, Low, and Equilibrium lines.")
+
+// --- Tactical Analysis Inputs ---
+var g_TAC = "Tactical Analysis"
+show_tactical_lines = input.bool(true, "Show Tactical Lines?", group = g_TAC, tooltip = "If checked, plots the dynamic lines based on the previous candle's high/low.")
+
+// --- Price Velocity Inputs ---
+var g_PV = "Price Velocity"
+pv_hist_lookback = input.int(50, "Historical Benchmark: MA Period", group = g_PV, tooltip="The lookback period for both historical Velocity % and Average Range in Points.")
+pv_upper_threshold = input.float(150.0, "Thresholds: Upper Limit %", group = g_PV)
+pv_lower_threshold = input.float(70.0, "Thresholds: Lower Limit %", group = g_PV)
+pv_high_color = input.color(color.new(color.red, 75), "Colors: High Velocity", group = g_PV)
+pv_low_color = input.color(color.new(color.green, 75), "Colors: Low Velocity", group = g_PV)
+pv_normal_color = input.color(color.new(color.gray, 80), "Colors: Normal Velocity", group = g_PV)
+
+// --- Table Layout Inputs ---
+var g_TBL = "Dashboard Layout"
+tbl_pos_str = input.string('Top Right', "Position", options = ['Top Left', 'Top Right','Bottom Left','Bottom Right'], group = g_TBL)
+tbl_size_str = input.string('Normal', "Size", options = ['Auto', 'Tiny', 'Small', 'Normal', 'Large', 'Huge'], group = g_TBL)
+
+
+// =============================================================================
+//                                 HELPER FUNCTIONS 
+// =============================================================================
+
+f_getVelocityDescription(velocity) =>
+    string description = velocity > 200 ? "Extreme" : velocity > 160 ? "Very High" : velocity > 120 ? "High" : velocity > 80 ? "Medium" : velocity > 50 ? "Low" : "Very Low"
+    description
+
+f_getVelocityColor(velocity) =>
+    color veloColor = velocity > pv_upper_threshold ? pv_high_color : velocity < pv_lower_threshold ? pv_low_color : pv_normal_color
+    veloColor
+
+f_getTablePos(pos) =>
+    switch pos
+        "Top Left" => position.top_left
+        "Top Right" => position.top_right
+        "Bottom Left" => position.bottom_left
+        "Bottom Right" => position.bottom_right
+
+f_getTableSize(size) =>
+    switch size
+        'Tiny' => size.tiny
+        'Small' => size.small
+        'Normal' => size.normal
+        'Large' => size.large
+        'Huge' => size.huge
+        'Auto' => size.auto
+
+// =============================================================================
+//                                 CORE LOGIC 
+// =============================================================================
+
+// --- Previous Day Levels (Strategic) ---
+pdh = request.security(syminfo.tickerid, "D", high[1], lookahead=barmerge.lookahead_on)
+pdl = request.security(syminfo.tickerid, "D", low[1], lookahead=barmerge.lookahead_on)
+equilibrium = (pdh + pdl) / 2 
+new_day = timeframe.change("D")
+
+// --- Strategic Lines Drawing [FIXED] ---
+var line pdh_line = na, var line pdl_line = na, var line equilibrium_line = na
+if show_strategic_lines
+    if new_day
+        line.delete(pdh_line[1]), line.delete(pdl_line[1]), line.delete(equilibrium_line[1])
+        pdh_line := line.new(bar_index, pdh, bar_index + 1, pdh, color=color.green, width=2, extend=extend.right)
+        pdl_line := line.new(bar_index, pdl, bar_index + 1, pdl, color=color.red, width=2, extend=extend.right)
+        equilibrium_line := line.new(bar_index, equilibrium, bar_index + 1, equilibrium, color=color.black, width=1, style=line.style_dashed, extend=extend.right) 
+
+// --- Strategic Bias Logic ---
+var bool pdh_crossed = false, var bool pdl_crossed = false
+var string confirmed_bias = "NO BIAS", var color bias_color = color.new(color.gray, 90)
+is_noon_or_later = hour(time, "Etc/UTC") >= 12
+
+if not pdh_crossed and not pdl_crossed
+    if is_noon_or_later and confirmed_bias == "NO BIAS"
+        if close > equilibrium
+            confirmed_bias := "MODERATE BULLISH", bias_color := color.new(color.green, 80)
+        else
+            confirmed_bias := "MODERATE BEARISH", bias_color := color.new(color.red, 80)
+    else if not is_noon_or_later
+        confirmed_bias := "NO BIAS", bias_color := color.new(color.gray, 90)
+if not pdh_crossed and close > pdh
+    confirmed_bias := "BULLISH BIAS CONFIRMED", bias_color := color.new(color.green, 80), pdh_crossed := true
+if not pdl_crossed and close < pdl
+    confirmed_bias := "BEARISH BIAS CONFIRMED", bias_color := color.new(color.red, 80), pdl_crossed := true
+if new_day
+    pdh_crossed := false, pdl_crossed := false, confirmed_bias := "NO BIAS", bias_color := color.new(color.gray, 90)
+
+// --- Daily Swing Tracking ---
+var float daily_swing_high = na, var float daily_swing_low = na
+if (new_day) 
+    daily_swing_high := high, daily_swing_low := low
+daily_swing_high := math.max(daily_swing_high, high)
+daily_swing_low := math.min(daily_swing_low, low)
+swing_equilibrium_daily = (daily_swing_high + daily_swing_low) / 2
+percent_progress_daily = (daily_swing_high - daily_swing_low) == 0 ? 0 : (close - daily_swing_low) / (daily_swing_high - daily_swing_low) * 100
+swing_direction = close > swing_equilibrium_daily ? "Bullish" : "Bearish"
+
+// --- Market State & Swing Stage Logic ---
+var string market_state = "Undefined", var string swing_stage_daily = "Undefined"
+weekly_high = request.security(syminfo.tickerid, "W", high[1], lookahead=barmerge.lookahead_on)
+weekly_low = request.security(syminfo.tickerid, "W", low[1], lookahead=barmerge.lookahead_on)
+pd_range = pdh - pdl, weekly_range = weekly_high - weekly_low
+var bool crossed_pdh_previously = false, var bool crossed_pdl_previously = false
+
+if pdh_crossed and not crossed_pdh_previously
+    crossed_pdh_previously := true
+if pdl_crossed and not crossed_pdl_previously
+    crossed_pdl_previously := true
+if new_day
+    crossed_pdh_previously := false
+    crossed_pdl_previously := false
+
+if (pd_range < weekly_range * 0.5 and math.abs(close - equilibrium) < pd_range * 0.25)
+    market_state := "Accumulation"
+else if (close > pdh and close > pdh + pd_range * 0.25) or (close < pdl and close < pdl - pd_range * 0.25)
+    market_state := "Expansion" 
+else if crossed_pdh_previously and close < pdh
+    market_state := "Reversal Down" 
+else if crossed_pdl_previously and close > pdl
+    market_state := "Reversal Up" 
+else if (pdh_crossed or pdl_crossed) and (close < pdh and close > equilibrium or close > pdl and close < equilibrium)
+    market_state := "Retracement"
+else if not (pdh_crossed or pdl_crossed)
+    market_state := "Ranging" 
+    
+if (math.abs(close - swing_equilibrium_daily) < (daily_swing_high - daily_swing_low) * 0.25)
+    swing_stage_daily := "Accumulation"
+else if (close > daily_swing_high[1] or close < daily_swing_low[1])
+    swing_stage_daily := "Expansion"
+else if (pdh_crossed or pdl_crossed)
+    swing_stage_daily := "Retracement"
+else
+    swing_stage_daily := "Developing"
+
+// --- Tactical Bias Logic ---
+[D_o_0] = request.security(syminfo.tickerid, 'D', [open], lookahead = barmerge.lookahead_on)
+daily_health_status = close > D_o_0 ? "Bullish" : close < D_o_0 ? "Bearish" : "Neutral"
+tactical_momentum_bullish = close[1] > high[2]
+tactical_momentum_bearish = close[1] < low[2]
+tactical_momentum_status = tactical_momentum_bullish ? "Bullish" : tactical_momentum_bearish ? "Bearish" : "Consolidation"
+
+// --- Tactical Lines Drawing ---
+var line line_tac_bull = na, var line line_tac_bear = na, var line line_tac_cons_h = na, var line line_tac_cons_l = na
+if show_tactical_lines
+    if tactical_momentum_bullish
+        line_tac_bull := line.new(bar_index[1], high[1], bar_index, high[1], color= color.green, style=line.style_solid, width=2)
+        line.delete(line_tac_bull[1])
+    if tactical_momentum_bearish
+        line_tac_bear := line.new(bar_index[1], low[1], bar_index, low[1], color = color.red, style=line.style_solid, width=2)
+        line.delete(line_tac_bear[1])
+    if not tactical_momentum_bullish and not tactical_momentum_bearish
+        line_tac_cons_h := line.new(bar_index[1], high[1], bar_index, high[1], color= color.blue, style=line.style_dotted, width=2)
+        line_tac_cons_l := line.new(bar_index[1], low[1], bar_index, low[1], color= color.blue, style=line.style_dotted, width=2)
+        line.delete(line_tac_cons_h[1]), line.delete(line_tac_cons_l[1])
+
+// --- Price Velocity & Avg Range Calculations ---
+pv_candle = high - low
+bm_hist = ta.sma(pv_candle, pv_hist_lookback)
+pv_hist_percent = (bm_hist[1] == 0) ? 0 : (pv_candle[1] / bm_hist[1]) * 100
+avg_range_recent_points = bm_hist / syminfo.mintick
+
+var float intra_sum = 0.0, var int intra_count = 0
+if (new_day)
+    intra_sum := 0.0, intra_count := 0
+intra_sum += pv_candle, intra_count += 1
+bm_intra = (intra_count == 0) ? 0 : (intra_sum / intra_count)
+avg_range_intraday_points = bm_intra / syminfo.mintick
+
+// =============================================================================
+//                                TABLE DRAWING 
+// =============================================================================
+
+var table dashboard = table.new(f_getTablePos(tbl_pos_str), 3, 7, frame_width = 2, border_width = 1)
+var text_size = f_getTableSize(tbl_size_str)
+
+if barstate.islast
+    table.clear(dashboard, 0, 0, 2, 6)
+
+    // --- Row 1: Strategic Daily Bias ---
+    table.cell(dashboard, 0, 0, "Daily Bias", text_size = text_size, text_halign=text.align_left)
+    table.cell(dashboard, 1, 0, confirmed_bias, text_size = text_size, bgcolor = bias_color, text_halign=text.align_right)
+    table.merge_cells(dashboard, 1, 0, 2, 0)
+
+    // --- Row 2: Market State ---
+    table.cell(dashboard, 0, 1, "Market State", text_size = text_size, text_halign=text.align_left)
+    table.cell(dashboard, 1, 1, market_state, text_size = text_size, text_halign=text.align_right)
+    table.merge_cells(dashboard, 1, 1, 2, 1)
+
+    // --- Row 3: Tactical Bias ---
+    tactical_display_text = daily_health_status + " | " + tactical_momentum_status
+    table.cell(dashboard, 0, 2, "Tactical Bias", text_size = text_size, text_halign=text.align_left)
+    table.cell(dashboard, 1, 2, tactical_display_text, text_size = text_size, text_halign=text.align_right)
+    table.merge_cells(dashboard, 1, 2, 2, 2)
+    
+    // --- Row 4: Swing Stage ---
+    swing_stage_text = swing_stage_daily + " @" + str.tostring(swing_equilibrium_daily, format.mintick)
+    table.cell(dashboard, 0, 3, "Swing Stage", text_size = text_size, text_halign=text.align_left)
+    table.cell(dashboard, 1, 3, swing_stage_text, text_size = text_size, text_halign=text.align_right)
+    table.merge_cells(dashboard, 1, 3, 2, 3)
+    
+    // --- Row 5: Swing Direction & Progress ---
+    table.cell(dashboard, 0, 4, "Swing Direction", text_size = text_size, text_halign=text.align_left)
+    table.cell(dashboard, 1, 4, swing_direction + " (" + str.tostring(percent_progress_daily, "0.0") + "%)", text_size = text_size, text_halign=text.align_right)
+    table.merge_cells(dashboard, 1, 4, 2, 4)
+
+    // --- Row 6: Velocity & Avg Range (Recent) ---
+    velocity_recent_text = str.tostring(pv_hist_percent, "0.0") + "% (" + f_getVelocityDescription(pv_hist_percent) + ")"
+    avg_range_recent_text = "Avg: " + str.tostring(avg_range_recent_points, "0.1") + " Pts"
+    table.cell(dashboard, 0, 5, "Velocity (Recent)", text_size = text_size, text_halign=text.align_left)
+    table.cell(dashboard, 1, 5, velocity_recent_text, text_size = text_size, bgcolor = f_getVelocityColor(pv_hist_percent), text_halign=text.align_right)
+    table.cell(dashboard, 2, 5, avg_range_recent_text, text_size = text_size, text_halign=text.align_right)
+
+    // --- Row 7: Velocity & Avg Range (Intraday) ---
+    pv_intra_percent_live = (bm_intra == 0) ? 0 : (pv_candle / bm_intra) * 100
+    avg_range_intraday_live_points = (bm_intra == 0) ? 0 : bm_intra / syminfo.mintick
+    velocity_intraday_text = str.tostring(pv_intra_percent_live, "0.0") + "% (" + f_getVelocityDescription(pv_intra_percent_live) + ")"
+    avg_range_intraday_text = "Avg: " + str.tostring(avg_range_intraday_live_points, "0.1") + " Pts"
+    table.cell(dashboard, 0, 6, "Velocity (Intraday)", text_size = text_size, text_halign=text.align_left)
+    table.cell(dashboard, 1, 6, velocity_intraday_text, text_size = text_size, bgcolor = f_getVelocityColor(pv_intra_percent_live), text_halign=text.align_right)
+    table.cell(dashboard, 2, 6, avg_range_intraday_text, text_size = text_size, text_halign=text.align_right)
+
