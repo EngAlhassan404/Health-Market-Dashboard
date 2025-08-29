@@ -82,7 +82,7 @@ The dashboard is the heart of the indicator. Each row is a distinct analytical l
 |---|---|---|---|
 | 1 | **Daily Bias** | **Strategic Compass:** Compares price to the previous day's high (PDH), low (PDL), and equilibrium. Progresses from `NO BIAS` to `MODERATE` (post-midday) and `CONFIRMED` upon a breach of PDH/PDL. | **What's the strategic game plan for today?** It aligns you with the dominant daily flow, preventing trades that fight the market's primary intention. |
 | 2 | **Market State** | **Contextual Narrative:** Identifies the "story" of the price action, such as `Accumulation` (coiling), `Expansion` (breakout), `Reversal` (failed breakout), `Retracement` (pullback), or `Ranging` (oscillation). | **Why is the market moving?** It qualifies price action, distinguishing a genuine `Expansion` from a fakeout that becomes a `Reversal`, providing critical context. |
-| 3 | **Tactical Bias** | **Live Pulse `[Daily Health | Momentum]`:** `Daily Health` is Close vs. Daily Open. `Momentum` compares the prior candle's close (`Close[1]`) to the high/low of the candle before it (`High/Low[2]`). | **What's happening right now?** Offers an instant, short-term snapshot for precise entry timing. A `Bullish \| Bullish` reading signals strong immediate pressure. |
+| 3 | **Tactical Bias** | **Live Pulse `[Daily Health]` | Momentum]`:** `Daily Health` is Close vs. Daily Open. `Momentum` compares the prior candle's close (`Close[1]`) to the high/low of the candle before it (`High/Low[2]`). | **What's happening right now?** Offers an instant, short-term snapshot for precise entry timing. A `Bullish \| Bullish` reading signals strong immediate pressure. |
 | 4 | **Swing Stage** | **Intraday Story:** Analyzes price action _within the current day's range_. Tracks if the intraday swing is `Developing`, `Expanding` to new daily extremes, or `Accumulating` energy around the intraday equilibrium. | **What is the current session's internal structure?** Helps differentiate a major trend continuation from a minor pullback within the established daily range. |
 | 5 | **Swing Direction** | **Exhaustion & Reversal Meter:** Displays the current micro-swing's direction and its completion progress as a percentage (0% = start, 100% = end). | **Is this move running out of steam?** A high progress reading (>85%) on a counter-trend move is a powerful exhaustion signal, often preceding a reversal or resumption of the primary trend. |
 | 6 | **Velocity (Recent)** | **Historical Power Meter:** Measures the current candle's range against the SMA of the last 'n' candles (default 50). It is accompanied by the Average Range in Points for the same period. | **How strong is this move compared to recent history?** A `Very High` velocity confirms breakout conviction. `Extreme` velocity can signal a climatic, exhaustive top or bottom. |
@@ -139,7 +139,7 @@ Connect with **Eng. Alhassan Ali Mubarak Bahbah** for feedback, questions, or co
 - [**GitHub**](https://github.com/EngAlhassan404)
 - [**Twitter/X**](https://twitter.com/EngAlhassan404)
 - [**Instagram**](https://www.instagram.com/k_.x_o/)
-[- [**Linkedin**](www.linkedin.com/in/eng-alhassan-ali-bahbah-a6620231b)](https://www.linkedin.com/in/eng-alhassan-ali-bahbah-a6620231b)
+- [**Linkedin**](www.linkedin.com/in/eng-alhassan-ali-bahbah-a6620231b)](https://www.linkedin.com/in/eng-alhassan-ali-bahbah-a6620231b)
 
 ## 9. Contributing
 
@@ -164,6 +164,7 @@ It is strongly recommended that you seek advice from a **qualified and independe
 ## 11. License
 
 This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
+
 
 
 
