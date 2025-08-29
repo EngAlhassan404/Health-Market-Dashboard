@@ -139,7 +139,7 @@ Connect with **Eng. Alhassan Ali Mubarak Bahbah** for feedback, questions, or co
 - [**GitHub**](https://github.com/EngAlhassan404)
 - [**Twitter/X**](https://twitter.com/EngAlhassan404)
 - [**Instagram**](https://www.instagram.com/k_.x_o/)
-- [**Linkedin**](www.linkedin.com/in/eng-alhassan-ali-bahbah-a6620231b)
+[- [**Linkedin**](www.linkedin.com/in/eng-alhassan-ali-bahbah-a6620231b)](https://www.linkedin.com/in/eng-alhassan-ali-bahbah-a6620231b)
 
 ## 9. Contributing
 
@@ -164,5 +164,6 @@ It is strongly recommended that you seek advice from a **qualified and independe
 ## 11. License
 
 This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
+
 
 
